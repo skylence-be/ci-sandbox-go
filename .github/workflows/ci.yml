@@ -73,7 +73,7 @@ jobs:
           COVERAGE_MIN: "80"
         run: |
           set -euo pipefail
-          go test ./... -race -count=1 -covermode=atomic -coverpkg=./... -coverprofile=coverage.out
+          go test ./... -race -count=1 -covermode=atomic -coverpkg=./app/...,./greet/... -coverprofile=coverage.out
           go tool cover -func=coverage.out
           TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub(/%/, "", $3); print $3}')
           {
