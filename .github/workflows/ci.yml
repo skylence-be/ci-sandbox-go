@@ -68,7 +68,28 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go test ./... -race -count=1
+      - name: Test with coverage (gate 80% lines)
+        env:
+          COVERAGE_MIN: "80"
+        run: |
+          set -euo pipefail
+          go test ./... -race -count=1 -covermode=atomic -coverpkg=./... -coverprofile=coverage.out
+          go tool cover -func=coverage.out
+          TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub(/%/, "", $3); print $3}')
+          {
+            echo "### Go coverage"
+            echo ""
+            echo "total: ${TOTAL}% (gate: ${COVERAGE_MIN}%)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          go tool cover -html=coverage.out -o coverage.html
+          awk -v t="$TOTAL" -v m="$COVERAGE_MIN" 'BEGIN { exit !(t + 0 >= m + 0) }' \
+            || { echo "::error::coverage ${TOTAL}% is below the ${COVERAGE_MIN}% gate"; exit 1; }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: go-coverage
+          path: |
+            coverage.out
+            coverage.html
 
   vuln-scan:
     name: Vulnerability Scan
