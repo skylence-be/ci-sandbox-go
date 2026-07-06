@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -14,18 +13,16 @@ import (
 // version is stamped by goreleaser via -ldflags "-X main.version=...".
 var version = "dev"
 
-// run writes the program output to w and returns the first write error, if any.
-// main stays a thin shell that surfaces that error as a non-zero exit.
+// run writes the program output to w and returns any write error. main stays a
+// thin shell that surfaces that error as a non-zero exit.
 func run(w io.Writer) error {
-	bw := bufio.NewWriter(w)
-	fmt.Fprintln(bw, greet.Greeting("skylence"))
-	fmt.Fprintln(bw, "version:", version)
-	return bw.Flush()
+	_, err := fmt.Fprintf(w, "%s\nversion: %s\n", greet.Greeting("skylence"), version)
+	return err
 }
 
 func main() {
 	if err := run(os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, "ci-sandbox-go:", err)
+		fmt.Fprintln(os.Stderr, "ci-sandbox-go:", err) //nolint:errcheck // best-effort stderr diagnostic on the exit path
 		os.Exit(1)
 	}
 }
