@@ -24,3 +24,5 @@ Prereqs on PATH: `go` (ships `gofmt`), `golangci-lint`, `govulncheck`. Skip the
 coverage step ad hoc with `LEFTHOOK_EXCLUDE=coverage lefthook run pre-push`.
 
 Not a product. Expect force-pushes and churn.
+
+<!-- demo PR to exercise dependency-review + PR-title checks -->
