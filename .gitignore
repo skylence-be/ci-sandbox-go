@@ -1,1 +1,6 @@
 /bin
+
+# local coverage scratch from lefthook hooks
+lefthook-cov.out
+coverage.out
+coverage.html

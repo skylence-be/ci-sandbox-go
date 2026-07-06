@@ -1,0 +1,34 @@
+# Git hooks for ci-sandbox-go, managed by lefthook (https://lefthook.dev).
+#
+# One-time per clone (hooks live in .git/hooks, which is NOT cloned):
+#   lefthook install
+# Prerequisites on PATH: go (ships gofmt), golangci-lint, govulncheck.
+# Skip a slow hook ad hoc:  LEFTHOOK_EXCLUDE=coverage lefthook run pre-push
+#
+# Split rationale: pre-commit is instant feedback (format only); the heavier
+# gates that mirror CI run at pre-push, right before code is shared.
+
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.go"
+      run: |
+        unformatted=$(gofmt -l {staged_files})
+        [ -z "$unformatted" ] || { echo "gofmt needed on:"; echo "$unformatted"; exit 1; }
+
+pre-push:
+  parallel: true
+  commands:
+    lint:
+      # golangci (staticcheck/govet/errcheck) is Go's static-analysis layer.
+      run: golangci-lint run ./...
+    coverage:
+      # go test + the 100% line gate over the logic packages (identical to CI).
+      run: |
+        go test ./... -race -covermode=atomic -coverpkg=./app/...,./greet/... -coverprofile=lefthook-cov.out
+        total=$(go tool cover -func=lefthook-cov.out | awk '/^total:/ {gsub(/%/,"",$3); print $3}')
+        rm -f lefthook-cov.out
+        awk -v t="$total" 'BEGIN { exit !(t + 0 >= 100) }' || { echo "coverage ${total}% below 100%"; exit 1; }
+    vuln:
+      run: govulncheck ./...
